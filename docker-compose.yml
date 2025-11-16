@@ -1,0 +1,33 @@
+services:
+  qbittorrent:
+    build:
+      context: .
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - QBT_WEBUI_PORT=8080
+      - QBT_PROFILE_DIR=/config
+      - WIREGUARD_CONFIG_FILE=${WIREGUARD_CONFIG_FILE:-/etc/wireguard/wg0.conf}
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:-}
+      - WIREGUARD_ADDRESS=${WIREGUARD_ADDRESS:-10.0.0.2/32}
+      - WIREGUARD_DNS=${WIREGUARD_DNS:-100.64.0.6}
+      - WG_INTERFACE=${WG_INTERFACE:-wg0}
+      - WAN_INTERFACE=${WAN_INTERFACE:-eth0}
+      - WG_PORT=${WG_PORT:-51820}
+      - WG_RESOLV_CONF=${WG_RESOLV_CONF:-/etc/resolv.conf}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/config:Z
+      - ./downloads:/downloads:Z
+      - ./wireguard:/etc/wireguard:Z
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+volumes: {}
