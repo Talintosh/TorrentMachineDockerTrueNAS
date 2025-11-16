@@ -16,7 +16,8 @@ services:
       - WAN_INTERFACE=${WAN_INTERFACE:-eth0}
       - WG_PORT=${WG_PORT:-51820}
       - WG_RESOLV_CONF=${WG_RESOLV_CONF:-/etc/resolv.conf}
-    network_mode: host
+    ports:
+      - "9000:9000"
     volumes:
       - ./config:/config:Z
       - ./downloads:/downloads:Z
