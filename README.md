@@ -55,7 +55,7 @@ This container bundles qBittorrent with a Mullvad WireGuard client and a hard ki
    docker compose logs qbittorrent | grep external-ip
    ```
    You should see Mullvad reporting “You are connected” and the wireguard interface showing recent handshakes. The log stream prints `[external-ip] …` lines every minute.
-6. **Access the UI** at `http://<host-ip>:8080` (default credentials `admin` / `adminadmin`; change them immediately under Preferences → Web UI).
+6. **Access the UI** at `http://<host-ip>:9000` (default credentials `admin` / `adminadmin`; change them immediately under Preferences → Web UI).
 7. **(Optional) Debug shell** – `./run-debug.py` or `docker compose exec qbittorrent bash` drops you inside the container as `appuser`.
 
 ### Shell access

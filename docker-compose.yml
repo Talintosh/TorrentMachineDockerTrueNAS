@@ -6,7 +6,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - QBT_WEBUI_PORT=8080
+      - QBT_WEBUI_PORT=9000
       - QBT_PROFILE_DIR=/config
       - WIREGUARD_CONFIG_FILE=${WIREGUARD_CONFIG_FILE:-/etc/wireguard/wg0.conf}
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:-}
@@ -17,7 +17,7 @@ services:
       - WG_PORT=${WG_PORT:-51820}
       - WG_RESOLV_CONF=${WG_RESOLV_CONF:-/etc/resolv.conf}
     ports:
-      - "8080:8080"
+      - "9000:9000"
     volumes:
       - ./config:/config:Z
       - ./downloads:/downloads:Z

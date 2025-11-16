@@ -133,7 +133,7 @@ def main():
     puid = int(os.environ.get("PUID", "1000"))
     pgid = int(os.environ.get("PGID", "1000"))
     profile_dir = os.environ.get("QBT_PROFILE_DIR", "/config")
-    webui_port = os.environ.get("QBT_WEBUI_PORT", "8080")
+    webui_port = os.environ.get("QBT_WEBUI_PORT", "9000")
     wireguard_config = os.environ.get("WIREGUARD_CONFIG_FILE", "/etc/wireguard/wg0.conf").strip()
 
     qbt_user = "qbittorrent"

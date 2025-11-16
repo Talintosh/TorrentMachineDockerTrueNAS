@@ -28,8 +28,8 @@ COPY scripts/wg-up.sh /usr/local/bin/wg-up.sh
 COPY scripts/wg-down.sh /usr/local/bin/wg-down.sh
 RUN chmod +x /usr/local/bin/log-external-ip.sh /usr/local/bin/wg-up.sh /usr/local/bin/wg-down.sh
 
-EXPOSE 8080
+EXPOSE 9000
 VOLUME ["/config", "/downloads"]
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.py"]
-CMD ["qbittorrent-nox", "--webui-port=8080", "--profile=/config"]
+CMD ["qbittorrent-nox", "--webui-port=9000", "--profile=/config"]
