@@ -2,45 +2,61 @@
 
 Docker project that builds an Ubuntu 24.04 based container with `qbittorrent-nox` pre-installed and configured to auto-start whenever the container boots.
 
+## Overview
+
+This container bundles qBittorrent with a Mullvad WireGuard client and a hard kill-switch. Traffic only leaves over the `wg0` interface, DNS is pinned to Mullvad (100.64.0.6 by default), and a helper script logs the current public IP so you can confirm the tunnel stays active. Bind-mounted volumes keep qBittorrent state on the host so the stack survives upgrades or rebuilds.
+
 ## Requirements
 
 - Docker and Docker Compose V2 (`docker compose ...`)
+- A Mullvad account + generated WireGuard configuration (or another WireGuard provider with compatible configs)
 
-## Initialization
+## Deployment (start to finish)
 
-1. Clone/download this repo on the host that will run Docker.
-2. (Optional, but tidy) Create bind-mount directories ahead of time:
+1. **Clone & prepare directories**
    ```bash
+   git clone <repo-url> TorrentMachineDockerTrueNAS
+   cd TorrentMachineDockerTrueNAS
    mkdir -p config downloads wireguard
    ```
-3. Build the image (this happens automatically on first `up`, but you can do it manually):
+2. **Generate/import your WireGuard settings**
+   - Use Mullvad’s WireGuard generator and download the `.conf`.
+   - Copy the `[Interface]` block into `wireguard/wg0.conf` (or another filename if you override `WIREGUARD_CONFIG_FILE`). Only keep `Address` + `PrivateKey`; leave `DNS` commented because the container rewrites `/etc/resolv.conf` itself. Paste the `[Peer]` section verbatim so the relay hostname/public key stay intact.
+   - Template for reference:
+     ```ini
+     [Interface]
+     Address = 10.0.0.2/32
+     PrivateKey = <replace-with-your-private-key>
+     # DNS is managed automatically; keep this commented unless you handle resolv.conf yourself.
+     #DNS = 100.64.0.6
+
+     [Peer]
+     PublicKey = <mullvad-server-public-key>
+     AllowedIPs = 0.0.0.0/0, ::/0
+     Endpoint = <wireguard-server-hostname>:51820
+     ```
+   - Prefer `*.mullvad.net` hostnames ending in `-wg-` (WireGuard relays). The repository ships an example file; overwrite it with your own values.
+3. **(Optional) Configure environment overrides**
+   - Create a `.env` file (or export variables) to override user IDs, ports, or WireGuard parameters (listed under *Configuration reference* below). At minimum you can set:
+     ```bash
+     export PUID=$(id -u)
+     export PGID=$(id -g)
+     ```
+4. **Build & run**
    ```bash
    docker compose build
-   ```
-
-## Usage
-
-1. Create the WireGuard configuration in `wireguard/wg0.conf` (or another filename if you override `WIREGUARD_CONFIG_FILE`). Start with the interface section below—fill in your private key and append your `[Peer]` section(s) from the Mullvad guide:
-   ```ini
-   [Interface]
-   Address = 10.0.0.2/32
-   PrivateKey = <replace-with-your-private-key>
-   # DNS is managed automatically; keep this commented unless you handle resolv.conf yourself.
-   #DNS = 100.64.0.6
-
-   # Add your [Peer] section here, for example:
-   # [Peer]
-   # PublicKey = <mullvad-server-public-key>
-   # AllowedIPs = 0.0.0.0/0, ::/0
-   # Endpoint = <server-hostname>:51820
-   ```
-   > Tip: if you prefer setting secrets via environment variables, export `WIREGUARD_PRIVATE_KEY` (plus optional `WIREGUARD_ADDRESS` / `WIREGUARD_DNS`) before `docker compose up` and the entrypoint will generate the `[Interface]` block automatically when the config file is missing.
-2. Build and start the container:
-   ```bash
    docker compose up -d
    ```
-3. Open the qBittorrent Web UI at `http://<host-ip>:8080`. The default credentials are the upstream defaults (`admin` / `adminadmin`) until you change them in the UI.
-4. (Optional) Run `./run-debug.py` to automate the setup/build/up steps and drop into an interactive shell inside the running container as the non-root `appuser`.
+   The first start may take a minute: the container brings up `wg0`, applies iptables rules, rewrites `/etc/resolv.conf`, launches qBittorrent, and starts the external-IP logger.
+5. **Verify the VPN & DNS**
+   ```bash
+   docker compose exec qbittorrent curl https://am.i.mullvad.net/connected
+   docker compose exec qbittorrent wg show
+   docker compose logs qbittorrent | grep external-ip
+   ```
+   You should see Mullvad reporting “You are connected” and the wireguard interface showing recent handshakes. The log stream prints `[external-ip] …` lines every minute.
+6. **Access the UI** at `http://<host-ip>:8080` (default credentials `admin` / `adminadmin`; change them immediately under Preferences → Web UI).
+7. **(Optional) Debug shell** – `./run-debug.py` or `docker compose exec qbittorrent bash` drops you inside the container as `appuser`.
 
 ### Shell access
 
@@ -53,7 +69,7 @@ Docker project that builds an Ubuntu 24.04 based container with `qbittorrent-nox
   docker compose run --rm qbittorrent bash
   ```
 
-### Configuration
+## Configuration reference
 
 - `./config` is mounted at `/config` inside the container and stores qBittorrent state.
 - `./downloads` is mounted at `/downloads` for completed downloads.
@@ -67,13 +83,13 @@ Docker project that builds an Ubuntu 24.04 based container with `qbittorrent-nox
   - `IP_CHECK_INTERVAL` – seconds between checks (default `60`).
   - `IP_CHECK_URL` – endpoint that returns your public IP (default `https://am.i.mullvad.net/ip`).
 
-### Mullvad WireGuard workflow
+## Mullvad WireGuard workflow & leak protection
 
 The container still follows Mullvad’s [WireGuard on Linux terminal (advanced)](https://mullvad.net/en/help/wireguard-and-mullvad-vpn) flow, but it now expects you to manage the `.conf` file yourself:
 
-1. You generate/export your own WireGuard keys and Mullvad server settings, then write them into `wireguard/wg0.conf` (see the template above). The entrypoint can optionally scaffold the `[Interface]` block via `WIREGUARD_PRIVATE_KEY`, `WIREGUARD_ADDRESS` (default `10.0.0.2/32`), and `WIREGUARD_DNS` (default `1.1.1.1`). It never touches your `[Peer]` definition, so append those lines manually.
+1. You generate/export your own WireGuard keys and Mullvad server settings, then write them into `wireguard/wg0.conf` (see the template above). The entrypoint can optionally scaffold the `[Interface]` block via `WIREGUARD_PRIVATE_KEY`, `WIREGUARD_ADDRESS` (default `10.0.0.2/32`), and `WIREGUARD_DNS` (default `100.64.0.6`). It never touches your `[Peer]` definition, so append those lines manually.
 2. On startup the entrypoint ensures the config file exists and then runs `wg-quick up /etc/wireguard/wg0.conf` (or whichever path you set in `WIREGUARD_CONFIG_FILE`). Compose already grants `NET_ADMIN`, `/dev/net/tun`, and `net.ipv4.conf.all.src_valid_mark=1`.
-3. As part of the `PostUp`/`PreDown` hooks the container executes `/etc/wireguard/up.sh` and `/etc/wireguard/down.sh`. These scripts enforce the kill-switch policy (only `wg0` traffic is allowed, LAN web access is explicitly whitelisted) and rewrite `/etc/resolv.conf` to point at Mullvad (`100.64.0.6` by default) so every lookup travels through the tunnel. When the tunnel shuts down, the original DNS configuration is restored. After the tunnel, firewall, and DNS settings are in place, the entrypoint remaps the qBittorrent user/group IDs, ensures the legal notice is accepted, and launches `qbittorrent-nox`.
+3. As part of the `PostUp`/`PreDown` hooks the container executes `/etc/wireguard/up.sh` and `/etc/wireguard/down.sh`. These scripts enforce the kill-switch policy (only `wg0` traffic is allowed, LAN web access is explicitly whitelisted) and rewrite `/etc/resolv.conf` to point at Mullvad (`100.64.0.6` by default) so every lookup travels through the tunnel. When the tunnel shuts down, the original DNS configuration is restored. The scripts also log every change so you can audit iptables/DNS behaviour in `docker compose logs`.
 
 Verify the VPN from inside the container:
 
@@ -82,4 +98,4 @@ docker compose exec qbittorrent curl https://am.i.mullvad.net/connected
 docker compose exec qbittorrent wg show
 ```
 
-To add kill switches or LAN exceptions, edit `wireguard/wg0.conf` according to Mullvad’s guide (e.g. append `PostUp`/`PreDown` iptables rules). Because the directory is bind-mounted, your edits persist across rebuilds.
+To customize the kill switch (e.g., different LAN CIDR or additional allowed ports), edit `wireguard/up.sh` / `down.sh`. Because all WireGuard files live in `./wireguard`, changes persist across rebuilds and are easy to version-control.
