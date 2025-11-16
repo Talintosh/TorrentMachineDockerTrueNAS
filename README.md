@@ -32,7 +32,7 @@ This container bundles qBittorrent with a Mullvad WireGuard client and a hard ki
 
      [Peer]
      PublicKey = <mullvad-server-public-key>
-     AllowedIPs = 0.0.0.0/0, ::/0
+     AllowedIPs = 0.0.0.0/0
      Endpoint = <wireguard-server-hostname>:51820
      ```
    - Prefer `*.mullvad.net` hostnames ending in `-wg-` (WireGuard relays). The repository ships an example file; overwrite it with your own values.

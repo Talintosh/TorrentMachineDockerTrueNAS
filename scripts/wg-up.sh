@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WG_IF="${WG_INTERFACE:-wg0}"
-WAN_IF="${WAN_INTERFACE:-eth0}"
+WAN_IF="${WAN_INTERFACE:-eth0@if4}"
 WG_PORT="${WG_PORT:-51820}"
 LAN_SUBNET="${LAN_SUBNET:-192.168.1.0/24}"
 WEB_PORT="${WEB_PORT:-8080}"
