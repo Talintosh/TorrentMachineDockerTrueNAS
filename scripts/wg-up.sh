@@ -31,6 +31,20 @@ iptables -A OUTPUT -o "${WG_IF}" -j ACCEPT
 echo "[wireguard-up] Allowing LAN access from ${LAN_SUBNET} to web port ${WEB_PORT}"
 iptables -A INPUT -i "${WAN_IF}" -p tcp --dport "${WEB_PORT}" -s "${LAN_SUBNET}" -j ACCEPT
 
+# Ensure LAN subnet traffic is routed via the Docker/WAN interface, not the WireGuard default route
+WAN_GW=""
+# Try to detect the gateway for WAN_IF (e.g. 172.20.0.1 on the docker bridge)
+if ip route show default 2>/dev/null | grep -q "dev ${WAN_IF}"; then
+    WAN_GW="$(ip route show default 2>/dev/null | awk '/default/ && $0 ~ /dev '"${WAN_IF}"'/ {print $3; exit}')"
+fi
+
+if [ -n "${WAN_GW}" ]; then
+    echo "[wireguard-up] Adding explicit LAN route ${LAN_SUBNET} via ${WAN_GW} on ${WAN_IF}"
+    ip route replace "${LAN_SUBNET}" via "${WAN_GW}" dev "${WAN_IF}"
+else
+    echo "[wireguard-up] WARNING: Could not determine gateway for ${WAN_IF}; LAN route ${LAN_SUBNET} not added"
+fi
+
 # Allow HTTPS (external IP checks) through WireGuard
 iptables -A OUTPUT -o "${WG_IF}" -p tcp --dport 443 -j ACCEPT
 
