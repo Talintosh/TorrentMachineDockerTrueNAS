@@ -74,6 +74,7 @@ This container bundles qBittorrent with a Mullvad WireGuard client and a hard ki
 - `./config` is mounted at `/config` inside the container and stores qBittorrent state.
 - `./downloads` is mounted at `/downloads` for completed downloads.
 - `./wireguard` is mounted at `/etc/wireguard` and stores the Mullvad-generated WireGuard `.conf` files plus optional secrets like the `account` file. Leave the `DNS=` line commented inside those configs; `/usr/local/bin/wg-up.sh` already rewrites `resolv.conf` to use Mullvad DNS and `wg-quick` will fail if it tries to manage DNS itself in this minimal container.
+- Host media: set `HOST_MEDIA_PATH` (default `/mnt/Drive`) and the container binds it to `MEDIA_PATH` (default `/mnt/media`) so you can point torrents to a large external drive. Change both via env vars or `.env`.
 - Customize the container user/group IDs or the exposed Web UI port via environment variables in `docker-compose.yml` (`PUID`, `PGID`, `QBT_WEBUI_PORT`, `QBT_PROFILE_DIR`). WireGuard behaviour is controlled with:
   - `WIREGUARD_CONFIG_FILE` – path to the config inside the container (default `/etc/wireguard/wg0.conf`).
   - `WIREGUARD_PRIVATE_KEY` – optional helper to auto-populate the `[Interface]` block if the config file doesn’t exist yet.

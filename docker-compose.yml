@@ -16,12 +16,14 @@ services:
       - WAN_INTERFACE=${WAN_INTERFACE:-eth0}
       - WG_PORT=${WG_PORT:-51820}
       - WG_RESOLV_CONF=${WG_RESOLV_CONF:-/etc/resolv.conf}
+      - MEDIA_PATH=${MEDIA_PATH:-/mnt/media}
     ports:
       - "9000:9000"
     volumes:
       - ./config:/config:Z
       - ./downloads:/downloads:Z
       - ./wireguard:/etc/wireguard:Z
+      - ${HOST_MEDIA_PATH:-/mnt/Drive}:${MEDIA_PATH:-/mnt/media}:Z
     cap_add:
       - NET_ADMIN
     devices:
