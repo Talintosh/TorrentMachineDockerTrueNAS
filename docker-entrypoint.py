@@ -141,14 +141,17 @@ def main():
     profile_path = Path(profile_dir.rstrip("/"))
     config_dir = profile_path / "qBittorrent" / "config"
     config_file = config_dir / "qBittorrent.conf"
+    torrent_input_dir = profile_path / "TorrentInput"
+    meta_input_dir = Path("/mnt/media/MetaInput")
 
     ensure_group(qbt_group, pgid)
     ensure_user(qbt_user, puid, qbt_group, profile_dir)
 
     ensure_dirs(
-        [Path(profile_dir), Path("/downloads"), config_dir],
+        [Path(profile_dir), Path("/downloads"), config_dir, torrent_input_dir],
         f"{qbt_user}:{qbt_group}",
     )
+    meta_input_dir.mkdir(parents=True, exist_ok=True)
     ensure_qbittorrent_config(config_file)
 
     config_file = ensure_wireguard_config(wireguard_config)
@@ -156,6 +159,20 @@ def main():
 
     subprocess.Popen(
         ["/usr/local/bin/log-external-ip.sh"],
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+    log(
+        f"Starting watch-and-move.py from {meta_input_dir} to {torrent_input_dir}"
+    )
+    subprocess.Popen(
+        [
+            "gosu",
+            f"{qbt_user}:{qbt_group}",
+            "/usr/local/bin/watch-and-move.py",
+            str(meta_input_dir),
+            str(torrent_input_dir),
+        ],
         stdout=sys.stdout,
         stderr=sys.stderr,
     )

@@ -24,9 +24,13 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -m appuser
 COPY docker-entrypoint.py /usr/local/bin/docker-entrypoint.py
 RUN chmod +x /usr/local/bin/docker-entrypoint.py
 COPY scripts/log-external-ip.sh /usr/local/bin/log-external-ip.sh
+COPY scripts/watch-and-move.py /usr/local/bin/watch-and-move.py
 COPY scripts/wg-up.sh /usr/local/bin/wg-up.sh
 COPY scripts/wg-down.sh /usr/local/bin/wg-down.sh
-RUN chmod +x /usr/local/bin/log-external-ip.sh /usr/local/bin/wg-up.sh /usr/local/bin/wg-down.sh
+RUN chmod +x /usr/local/bin/log-external-ip.sh \
+    /usr/local/bin/watch-and-move.py \
+    /usr/local/bin/wg-up.sh \
+    /usr/local/bin/wg-down.sh
 
 EXPOSE 9000
 VOLUME ["/config", "/downloads"]
