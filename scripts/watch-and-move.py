@@ -78,6 +78,20 @@ def parse_args():
     return parser.parse_args()
 
 
+def remove_source(path: Path):
+    """
+    Remove the original file path, raising a clear error if it fails.
+    """
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        return
+    except PermissionError as exc:
+        raise RuntimeError(f"Permission denied deleting {path}: {exc}") from exc
+    except OSError as exc:
+        raise RuntimeError(f"Unable to delete {path}: {exc}") from exc
+
+
 def safe_move(src: Path, dst_dir: Path):
     """
     Move src into dst_dir.
@@ -110,7 +124,11 @@ def safe_move(src: Path, dst_dir: Path):
                 raise
             # Cross-device rename; fall back to copy + delete.
             shutil.copy2(src, target)
-            src.unlink()
+            remove_source(src)
+        else:
+            if src.exists():
+                # Handle odd filesystems that leave behind a source stub after rename.
+                remove_source(src)
         print(f"[MOVE] {src} -> {target}")
         return
 
