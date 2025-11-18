@@ -95,7 +95,7 @@ def ensure_wireguard_config(config_path):
         )
 
     address = os.environ.get("WIREGUARD_ADDRESS", "10.0.0.2/32").strip() or "10.0.0.2/32"
-    dns = os.environ.get("WIREGUARD_DNS", "1.1.1.1").strip() or "1.1.1.1"
+    dns = os.environ.get("WIREGUARD_DNS", "100.64.0.6").strip() or "100.64.0.6"
 
     template = dedent(
         f"""\

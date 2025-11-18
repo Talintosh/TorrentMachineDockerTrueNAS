@@ -7,7 +7,7 @@ WG_PORT="${WG_PORT:-51820}"
 LAN_SUBNET="${LAN_SUBNET:-192.168.1.0/24}"
 WEB_PORT="${WEB_PORT:-9000}"
 RESOLV_CONF="${WG_RESOLV_CONF:-/etc/resolv.conf}"
-DNS_SERVERS="${WIREGUARD_DNS:-100.64.0.3}"
+DNS_SERVERS="${WIREGUARD_DNS:-100.64.0.6}"
 DNS_SERVERS="${DNS_SERVERS//,/ }"
 
 echo "[wireguard-up] Blocking all outbound traffic except ${WG_IF}"
