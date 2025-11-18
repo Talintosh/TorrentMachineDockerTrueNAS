@@ -141,16 +141,19 @@ def main():
     profile_path = Path(profile_dir.rstrip("/"))
     config_dir = profile_path / "qBittorrent" / "config"
     config_file = config_dir / "qBittorrent.conf"
-    torrent_input_dir = profile_path / "TorrentInput"
+    torrent_input_dir = Path("/tmp/TorrentInput")
     meta_input_dir = Path("/mnt/media/MetaInput")
 
     ensure_group(qbt_group, pgid)
     ensure_user(qbt_user, puid, qbt_group, profile_dir)
 
     ensure_dirs(
-        [Path(profile_dir), Path("/downloads"), config_dir, torrent_input_dir],
+        [Path(profile_dir), Path("/downloads"), config_dir],
         f"{qbt_user}:{qbt_group}",
     )
+    log(f"Ensuring TorrentInput staging directory exists at {torrent_input_dir}")
+    torrent_input_dir.mkdir(parents=True, exist_ok=True)
+    run(["chown", "-R", f"{qbt_user}:{qbt_group}", str(torrent_input_dir)])
     meta_input_dir.mkdir(parents=True, exist_ok=True)
     ensure_qbittorrent_config(config_file)
 
