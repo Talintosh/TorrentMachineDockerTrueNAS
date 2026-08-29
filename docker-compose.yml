@@ -4,9 +4,9 @@ services:
       context: .
     container_name: qbittorrent
     environment:
-      - PUID=1000
-      - PGID=1000
-      - QBT_WEBUI_PORT=9000
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - QBT_WEBUI_PORT=${QBT_WEBUI_PORT:-9000}
       - QBT_PROFILE_DIR=/config
       - WIREGUARD_CONFIG_FILE=${WIREGUARD_CONFIG_FILE:-/etc/wireguard/wg0.conf}
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:-}
@@ -16,14 +16,16 @@ services:
       - WAN_INTERFACE=${WAN_INTERFACE:-eth0}
       - WG_PORT=${WG_PORT:-51820}
       - WG_RESOLV_CONF=${WG_RESOLV_CONF:-/etc/resolv.conf}
+      - LAN_SUBNET=${LAN_SUBNET:-192.168.1.0/24}
+      - WEB_PORT=${QBT_WEBUI_PORT:-9000}
       - MEDIA_PATH=${MEDIA_PATH:-/mnt/media}
     ports:
-      - "9000:9000"
+      - "${QBT_WEBUI_PORT:-9000}:${QBT_WEBUI_PORT:-9000}"
     volumes:
       - ./config:/config:Z
       - ./downloads:/downloads:Z
       - ./wireguard:/etc/wireguard:Z
-      - ${HOST_MEDIA_PATH:-/mnt/Drive}:${MEDIA_PATH:-/mnt/media}:Z
+      - ${HOST_MEDIA_PATH:-./media}:${MEDIA_PATH:-/mnt/media}:Z
     cap_add:
       - NET_ADMIN
     devices:

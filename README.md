@@ -35,13 +35,13 @@ This container bundles qBittorrent with a Mullvad WireGuard client and a hard ki
      AllowedIPs = 0.0.0.0/0
      Endpoint = <wireguard-server-hostname>:51820
      ```
-   - Prefer `*.mullvad.net` hostnames ending in `-wg-` (WireGuard relays). The repository ships an example file; overwrite it with your own values.
-3. **(Optional) Configure environment overrides**
-   - Create a `.env` file (or export variables) to override user IDs, ports, or WireGuard parameters (listed under *Configuration reference* below). At minimum you can set:
+   - Prefer `*.mullvad.net` hostnames ending in `-wg-` (WireGuard relays). The `wireguard/` directory is git-ignored, so no config is shipped — you must create `wg0.conf` yourself.
+3. **Configure environment overrides**
+   - Copy `.env.example` to `.env` and adjust it (the file is git-ignored). At minimum set `HOST_MEDIA_PATH` to the directory on your host holding the media library, and `LAN_SUBNET` to the network you browse from:
      ```bash
-     export PUID=$(id -u)
-     export PGID=$(id -g)
+     cp .env.example .env
      ```
+   - `HOST_MEDIA_PATH` defaults to `./media` inside the repo, which is almost certainly not where your library lives.
 4. **Build & run**
    ```bash
    docker compose build
@@ -74,7 +74,8 @@ This container bundles qBittorrent with a Mullvad WireGuard client and a hard ki
 - `./config` is mounted at `/config` inside the container and stores qBittorrent state.
 - `./downloads` is mounted at `/downloads` for completed downloads.
 - `./wireguard` is mounted at `/etc/wireguard` and stores the Mullvad-generated WireGuard `.conf` files plus optional secrets like the `account` file. Leave the `DNS=` line commented inside those configs; `/usr/local/bin/wg-up.sh` already rewrites `resolv.conf` to use Mullvad DNS and `wg-quick` will fail if it tries to manage DNS itself in this minimal container.
-- Host media: set `HOST_MEDIA_PATH` (default `/mnt/Drive`) and the container binds it to `MEDIA_PATH` (default `/mnt/media`) so you can point torrents to a large external drive. Change both via env vars or `.env`.
+- Host media: set `HOST_MEDIA_PATH` (default `./media`) and the container binds it to `MEDIA_PATH` (default `/mnt/media`) so you can point torrents to a large external drive. Change both via env vars or `.env`. The entrypoint watches `MEDIA_PATH/MetaInput` for `.torrent` files and moves them into the staging directory once fully written.
+- `LAN_SUBNET` (default `192.168.1.0/24`) is the only network permitted to reach the Web UI once the kill-switch is active. Set it to your actual LAN or you will be locked out of the UI.
 - Customize the container user/group IDs or the exposed Web UI port via environment variables in `docker-compose.yml` (`PUID`, `PGID`, `QBT_WEBUI_PORT`, `QBT_PROFILE_DIR`). WireGuard behaviour is controlled with:
   - `WIREGUARD_CONFIG_FILE` – path to the config inside the container (default `/etc/wireguard/wg0.conf`).
   - `WIREGUARD_PRIVATE_KEY` – optional helper to auto-populate the `[Interface]` block if the config file doesn’t exist yet.
@@ -99,4 +100,4 @@ docker compose exec qbittorrent curl https://am.i.mullvad.net/connected
 docker compose exec qbittorrent wg show
 ```
 
-To customize the kill switch (e.g., different LAN CIDR or additional allowed ports), edit `wireguard/up.sh` / `down.sh`. Because all WireGuard files live in `./wireguard`, changes persist across rebuilds and are easy to version-control.
+To customize the kill switch, set `LAN_SUBNET` / `WEB_PORT` in `.env`, or edit `scripts/wg-up.sh` and `scripts/wg-down.sh` and rebuild — those scripts are baked into the image at `/usr/local/bin/`.

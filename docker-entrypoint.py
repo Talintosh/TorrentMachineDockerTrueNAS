@@ -135,6 +135,7 @@ def main():
     profile_dir = os.environ.get("QBT_PROFILE_DIR", "/config")
     webui_port = os.environ.get("QBT_WEBUI_PORT", "9000")
     wireguard_config = os.environ.get("WIREGUARD_CONFIG_FILE", "/etc/wireguard/wg0.conf").strip()
+    media_path = os.environ.get("MEDIA_PATH", "/mnt/media").strip() or "/mnt/media"
 
     qbt_user = "qbittorrent"
     qbt_group = "qbittorrent"
@@ -142,7 +143,7 @@ def main():
     config_dir = profile_path / "qBittorrent" / "config"
     config_file = config_dir / "qBittorrent.conf"
     torrent_input_dir = Path("/tmp/TorrentInput")
-    meta_input_dir = Path("/mnt/media/MetaInput")
+    meta_input_dir = Path(media_path.rstrip("/")) / "MetaInput"
 
     ensure_group(qbt_group, pgid)
     ensure_user(qbt_user, puid, qbt_group, profile_dir)

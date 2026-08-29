@@ -1,3 +1,6 @@
 config/
 downloads/
+media/
 wireguard/
+.env
+__pycache__/
